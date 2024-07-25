@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  api_trello_nginx:
+    image: nginx:latest
+    ports:
+      - 8080:80
+    volumes:
+      - ./:/var/www/
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    container_name: api_trello__nginx
+    depends_on:
+      - api_trello_app
+
+  api_trello_app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    volumes:
+      - ./:/var/www/
+    container_name: api_trello_app
+    depends_on:
+      - api_trello_db
+      
+  api_trello_php-cli:
+    build:
+      context: .
+      dockerfile: docker/php-cli.Dockerfile
+    volumes:
+      - ./:/var/www/
+    depends_on:
+      - api_trello_db
+    tty: true
+      
+  api_trello_db:
+    image: mysql:8.0
+    restart: always
+    ports:
+      - 33061:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=my_db
+    volumes:
+      - ./tmp:/var/lib/mysql/
+    container_name: api_trello_db
+
+  api_trello_pmy:
+    image: phpmyadmin:latest
+    restart: always
+    ports:
+      - 8081:80
+    environment:
+      - PMA_HOST=db
+      - PMA_USER=root
+      - PMA_PASSWORD=secret
+      - UPLOAD_LIMIT=64M
+    container_name: api_trello_pmy
